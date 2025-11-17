@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"netanalyze/pkg/analyzer"
 	"netanalyze/pkg/detection"
 	"netanalyze/pkg/dns"
 	"netanalyze/pkg/http"
@@ -23,15 +24,19 @@ func main() {
 	enableGeo := flag.Bool("geo", false, "Show geolocation information")
 	enablePorts := flag.Bool("ports", false, "Scan common ports")
 	enablePerf := flag.Bool("perf", false, "Show performance metrics")
+	enableTrace := flag.Bool("trace", false, "Show network hops (traceroute)")
+	verbose := flag.Bool("verbose", false, "Show all details including non-detected items")
 	flag.Parse()
 
 	if len(flag.Args()) == 0 {
-		fmt.Println("Usage: netanalyze [--json] [--geo] [--ports] [--perf] <host>")
+		fmt.Println("Usage: netanalyze [--json] [--geo] [--ports] [--perf] [--trace] [--verbose] <host>")
 		fmt.Println("\nOptions:")
 		fmt.Println("  --json         Output in JSON format")
 		fmt.Println("  --geo          Show geolocation information")
 		fmt.Println("  --ports        Scan common ports")
 		fmt.Println("  --perf         Show performance metrics")
+		fmt.Println("  --trace        Show network hops (traceroute)")
+		fmt.Println("  --verbose      Show all details including non-detected items")
 		os.Exit(1)
 	}
 
@@ -76,10 +81,18 @@ func main() {
 		result.Performance = network.AnalyzePerformance(host)
 	}
 
+	if *enableTrace {
+		result.Network.Hops = network.TraceRoute(host, 30)
+		result.Network.HopCount = len(result.Network.Hops)
+	}
+
+	// Analyze findings
+	result.Findings = analyzer.AnalyzeFindings(&result)
+
 	if *jsonOut {
 		out, _ := json.MarshalIndent(result, "", "  ")
 		fmt.Println(string(out))
 	} else {
-		output.PrintReport(result)
+		output.PrintReport(result, *verbose)
 	}
 }
