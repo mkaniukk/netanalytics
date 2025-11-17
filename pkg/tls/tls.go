@@ -41,16 +41,37 @@ func AnalyzeTLS(host string) types.TLSInfo {
 		info.Issuer = cert.Issuer.CommonName
 		info.Subject = cert.Subject.CommonName
 		info.Expiry = cert.NotAfter.String()
+		info.NotBefore = cert.NotBefore.String()
 		info.SignatureAlgo = cert.SignatureAlgorithm.String()
+		info.PublicKeyAlgo = cert.PublicKeyAlgorithm.String()
 		info.SAN = append(info.SAN, cert.DNSNames...)
 		info.SerialNumber = cert.SerialNumber.String()
 		info.ChainLength = len(state.PeerCertificates)
 		info.OCSPStapling = len(state.OCSPResponse) > 0
 
 		if pub, ok := cert.PublicKey.(*rsa.PublicKey); ok {
-			info.KeyType = fmt.Sprintf("RSA %d bits", pub.Size()*8)
+			info.KeySize = pub.Size() * 8
+			info.KeyType = fmt.Sprintf("RSA %d bits", info.KeySize)
 		} else {
-			info.KeyType = "Unknown"
+			info.KeyType = info.PublicKeyAlgo
+		}
+
+		// Cipher strength analysis
+		if strings.Contains(info.CipherSuite, "AES_256") {
+			info.CipherStrength = "256-bit"
+		} else if strings.Contains(info.CipherSuite, "AES_128") {
+			info.CipherStrength = "128-bit"
+		} else if strings.Contains(info.CipherSuite, "CHACHA20") {
+			info.CipherStrength = "256-bit"
+		}
+
+		// Key exchange mechanism
+		if strings.Contains(info.CipherSuite, "ECDHE") {
+			info.KeyExchange = "ECDHE (Forward Secrecy)"
+		} else if strings.Contains(info.CipherSuite, "DHE") {
+			info.KeyExchange = "DHE (Forward Secrecy)"
+		} else if info.Version == "TLS 1.3" {
+			info.KeyExchange = "TLS 1.3 (Perfect Forward Secrecy)"
 		}
 	}
 	return info

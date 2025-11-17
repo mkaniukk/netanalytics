@@ -3,6 +3,7 @@ package http
 import (
 	"fmt"
 	nethttp "net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -61,17 +62,40 @@ func detectTechnology(headers nethttp.Header) []string {
 	if aspVersion := headers.Get("X-AspNet-Version"); aspVersion != "" {
 		tech = append(tech, "ASP.NET "+aspVersion)
 	}
+	if mvcVersion := headers.Get("X-AspNetMvc-Version"); mvcVersion != "" {
+		tech = append(tech, "ASP.NET MVC "+mvcVersion)
+	}
 	if generator := headers.Get("X-Generator"); generator != "" {
 		tech = append(tech, generator)
 	}
+	if runtime := headers.Get("X-Runtime"); runtime != "" {
+		tech = append(tech, "Runtime: "+runtime)
+	}
+	if version := headers.Get("X-Version"); version != "" {
+		tech = append(tech, "Version: "+version)
+	}
+	if drupal := headers.Get("X-Drupal-Cache"); drupal != "" {
+		tech = append(tech, "Drupal")
+	}
+	if headers.Get("X-Drupal-Dynamic-Cache") != "" {
+		tech = append(tech, "Drupal 8+")
+	}
 	if headers.Get("CF-Ray") != "" {
-		tech = append(tech, "Cloudflare CDN")
+		cfVersion := headers.Get("CF-Cache-Status")
+		if cfVersion != "" {
+			tech = append(tech, "Cloudflare CDN")
+		} else {
+			tech = append(tech, "Cloudflare CDN")
+		}
 	}
 	if headers.Get("X-Amz-Cf-Id") != "" {
 		tech = append(tech, "AWS CloudFront")
 	}
 	if headers.Get("X-Azure-Ref") != "" {
 		tech = append(tech, "Azure CDN")
+	}
+	if headers.Get("X-Varnish") != "" {
+		tech = append(tech, "Varnish Cache")
 	}
 	if headers.Get("X-Cache") != "" {
 		tech = append(tech, "Caching Layer")
@@ -148,17 +172,56 @@ func detectTechStack(headers nethttp.Header, body string) types.TechFingerprint 
 			tech.Analytics = append(tech.Analytics, "Facebook Pixel")
 		}
 
-		if strings.Contains(body, "react") {
+		// JavaScript frameworks with version detection
+		if reactMatch := regexp.MustCompile(`react["']?[:\s,]+["']?(\d+\.\d+[.\d]*)`).FindStringSubmatch(body); len(reactMatch) > 1 {
+			tech.JavaScript = append(tech.JavaScript, "React "+reactMatch[1])
+		} else if strings.Contains(body, "react") {
 			tech.JavaScript = append(tech.JavaScript, "React")
 		}
-		if strings.Contains(body, "vue.js") || strings.Contains(body, "vuejs") {
+
+		if vueMatch := regexp.MustCompile(`vue["']?[:\s,]+["']?(\d+\.\d+[.\d]*)`).FindStringSubmatch(body); len(vueMatch) > 1 {
+			tech.JavaScript = append(tech.JavaScript, "Vue.js "+vueMatch[1])
+		} else if strings.Contains(body, "vue.js") || strings.Contains(body, "vuejs") {
 			tech.JavaScript = append(tech.JavaScript, "Vue.js")
 		}
-		if strings.Contains(body, "angular") {
+
+		if angularMatch := regexp.MustCompile(`angular["']?[:\s,]+["']?(\d+\.\d+[.\d]*)`).FindStringSubmatch(body); len(angularMatch) > 1 {
+			tech.JavaScript = append(tech.JavaScript, "Angular "+angularMatch[1])
+		} else if strings.Contains(body, "angular") {
 			tech.JavaScript = append(tech.JavaScript, "Angular")
 		}
-		if strings.Contains(body, "jquery") {
+
+		if jqueryMatch := regexp.MustCompile(`jquery[\s-]*(v?\d+\.\d+[.\d]*)`).FindStringSubmatch(strings.ToLower(body)); len(jqueryMatch) > 1 {
+			tech.JavaScript = append(tech.JavaScript, "jQuery "+strings.TrimPrefix(jqueryMatch[1], "v"))
+		} else if strings.Contains(body, "jquery") {
 			tech.JavaScript = append(tech.JavaScript, "jQuery")
+		}
+
+		// CMS detection
+		if strings.Contains(body, "wp-content") || strings.Contains(body, "wordpress") {
+			if wpMatch := regexp.MustCompile(`wordpress[\s/]*(\d+\.\d+[.\d]*)`).FindStringSubmatch(strings.ToLower(body)); len(wpMatch) > 1 {
+				tech.CMS = "WordPress " + wpMatch[1]
+			} else if metaGen := regexp.MustCompile(`<meta[^>]+generator[^>]+WordPress[\s]+(\d+\.\d+[.\d]*)`).FindStringSubmatch(body); len(metaGen) > 1 {
+				tech.CMS = "WordPress " + metaGen[1]
+			} else {
+				tech.CMS = "WordPress"
+			}
+		}
+
+		if strings.Contains(body, "Joomla") && tech.CMS == "" {
+			if joomlaMatch := regexp.MustCompile(`Joomla[!\s]*(\d+\.\d+[.\d]*)`).FindStringSubmatch(body); len(joomlaMatch) > 1 {
+				tech.CMS = "Joomla " + joomlaMatch[1]
+			} else {
+				tech.CMS = "Joomla"
+			}
+		}
+
+		if strings.Contains(body, "Drupal") && tech.CMS == "" {
+			if drupalMatch := regexp.MustCompile(`Drupal[\s]*(\d+\.\d+[.\d]*)`).FindStringSubmatch(body); len(drupalMatch) > 1 {
+				tech.CMS = "Drupal " + drupalMatch[1]
+			} else {
+				tech.CMS = "Drupal"
+			}
 		}
 	}
 	return tech
