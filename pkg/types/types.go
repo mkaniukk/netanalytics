@@ -16,17 +16,22 @@ type DNSInfo struct {
 }
 
 type TLSInfo struct {
-	Version       string
-	CipherSuite   string
-	Subject       string
-	Issuer        string
-	Expiry        string
-	KeyType       string
-	SignatureAlgo string
-	SAN           []string
-	SerialNumber  string
-	ChainLength   int
-	OCSPStapling  bool
+	Version        string
+	CipherSuite    string
+	Subject        string
+	Issuer         string
+	Expiry         string
+	NotBefore      string
+	KeyType        string
+	KeySize        int
+	SignatureAlgo  string
+	PublicKeyAlgo  string
+	SAN            []string
+	SerialNumber   string
+	ChainLength    int
+	OCSPStapling   bool
+	CipherStrength string
+	KeyExchange    string
 }
 
 type HTTPInfo struct {
@@ -134,30 +139,45 @@ type WHOISInfo struct {
 	NameServers  []string
 }
 
+type HopInfo struct {
+	Hop      int
+	IP       string
+	Hostname string
+	RTT      string
+}
+
 type NetworkInfo struct {
-	ASN         string
-	ASNOrg      string
-	IPVersion   string
-	ReverseDNS  string
-	HopCount    int
+	ASN        string
+	ASNOrg     string
+	IPVersion  string
+	ReverseDNS string
+	HopCount   int
+	Hops       []HopInfo
+}
+
+type Finding struct {
+	Severity string // "critical", "warning", "info", "positive"
+	Category string // "Security", "Performance", "Configuration", etc.
+	Message  string
+	Detail   string
 }
 
 type AnalysisResult struct {
-	Host           string
-	Timestamp      string
-	IP             []string
-	DNS            DNSInfo
-	TLS            TLSInfo
-	SSLGrade       SSLGrade
-	HTTP           HTTPInfo
-	Geo            []GeoInfo
-	Ports          []PortInfo
-	Performance    PerformanceInfo
-	CDN            CDNInfo
-	CloudProvider  CloudProviderInfo
-	ServiceMesh    ServiceMeshInfo
-	LoadBalancer   LoadBalancerInfo
-	Container      ContainerInfo
-	WHOIS          WHOISInfo
-	Network        NetworkInfo
+	Host          string
+	Timestamp     string
+	IP            []string
+	DNS           DNSInfo
+	TLS           TLSInfo
+	SSLGrade      SSLGrade
+	HTTP          HTTPInfo
+	Geo           []GeoInfo
+	Ports         []PortInfo
+	Performance   PerformanceInfo
+	CDN           CDNInfo
+	CloudProvider CloudProviderInfo
+	ServiceMesh   ServiceMeshInfo
+	LoadBalancer  LoadBalancerInfo
+	Container     ContainerInfo
+	Network       NetworkInfo
+	Findings      []Finding
 }

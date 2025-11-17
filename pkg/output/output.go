@@ -7,11 +7,78 @@ import (
 	"netanalyze/pkg/types"
 )
 
-func PrintReport(r types.AnalysisResult) {
-	fmt.Printf("\n%s\n", strings.Repeat("=", 50))
+func printFindings(findings []types.Finding) {
+	if len(findings) == 0 {
+		return
+	}
+
+	fmt.Println("\n🔍 Key Findings:")
+
+	// Group findings by severity
+	critical := []types.Finding{}
+	warnings := []types.Finding{}
+	positives := []types.Finding{}
+	info := []types.Finding{}
+
+	for _, f := range findings {
+		switch f.Severity {
+		case "critical":
+			critical = append(critical, f)
+		case "warning":
+			warnings = append(warnings, f)
+		case "positive":
+			positives = append(positives, f)
+		case "info":
+			info = append(info, f)
+		}
+	}
+
+	// Print critical findings first
+	for _, f := range critical {
+		fmt.Printf("\n  ❌ [CRITICAL] %s\n", f.Message)
+		if f.Detail != "" {
+			fmt.Printf("     → %s\n", f.Detail)
+		}
+	}
+
+	// Print warnings
+	for _, f := range warnings {
+		fmt.Printf("\n  ⚠️  [WARNING] %s\n", f.Message)
+		if f.Detail != "" {
+			fmt.Printf("     → %s\n", f.Detail)
+		}
+	}
+
+	// Print positive findings
+	for _, f := range positives {
+		fmt.Printf("\n  ✅ [POSITIVE] %s\n", f.Message)
+		if f.Detail != "" {
+			fmt.Printf("     → %s\n", f.Detail)
+		}
+	}
+
+	// Print info
+	for _, f := range info {
+		fmt.Printf("\n  ℹ️  [INFO] %s\n", f.Message)
+		if f.Detail != "" {
+			fmt.Printf("     → %s\n", f.Detail)
+		}
+	}
+
+	fmt.Println()
+}
+
+func PrintReport(r types.AnalysisResult, verbose bool) {
+	fmt.Println("\n" + strings.Repeat("=", 50))
 	fmt.Printf("Host: %s\n", r.Host)
 	fmt.Printf("Time: %s\n", r.Timestamp)
-	fmt.Printf("%s\n\n", strings.Repeat("=", 50))
+	fmt.Println(strings.Repeat("=", 50))
+
+	// Print key findings first
+	if len(r.Findings) > 0 {
+		printFindings(r.Findings)
+	}
+	fmt.Println()
 
 	fmt.Println("DNS Records:")
 	if len(r.DNS.A) > 0 {
@@ -41,15 +108,36 @@ func PrintReport(r types.AnalysisResult) {
 	if len(r.DNS.CAA) > 0 {
 		fmt.Printf("  CAA:    %v\n", r.DNS.CAA)
 	}
-	fmt.Printf("  Lookup: %s\n\n", r.DNS.Duration)
+	if r.DNS.Duration != "" {
+		fmt.Printf("  Lookup: %s\n", r.DNS.Duration)
+	}
+	fmt.Println()
 
 	if r.TLS.Version != "" {
 		fmt.Println("TLS Certificate:")
 		fmt.Printf("  Protocol:  %s\n", r.TLS.Version)
 		fmt.Printf("  Cipher:    %s\n", r.TLS.CipherSuite)
+		if r.TLS.CipherStrength != "" {
+			fmt.Printf("  Strength:  %s\n", r.TLS.CipherStrength)
+		}
+		if r.TLS.KeyExchange != "" {
+			fmt.Printf("  Key Exch:  %s\n", r.TLS.KeyExchange)
+		}
 		fmt.Printf("  Subject:   %s\n", r.TLS.Subject)
 		fmt.Printf("  Issuer:    %s\n", r.TLS.Issuer)
-		fmt.Printf("  Key:       %s\n", r.TLS.KeyType)
+		fmt.Printf("  Key Type:  %s\n", r.TLS.KeyType)
+		if r.TLS.KeySize > 0 {
+			fmt.Printf("  Key Size:  %d bits\n", r.TLS.KeySize)
+		}
+		if r.TLS.PublicKeyAlgo != "" {
+			fmt.Printf("  Pub Key:   %s\n", r.TLS.PublicKeyAlgo)
+		}
+		if r.TLS.SignatureAlgo != "" {
+			fmt.Printf("  Signature: %s\n", r.TLS.SignatureAlgo)
+		}
+		if r.TLS.NotBefore != "" {
+			fmt.Printf("  Valid From:%s\n", r.TLS.NotBefore)
+		}
 		fmt.Printf("  Expires:   %s\n", r.TLS.Expiry)
 		if len(r.TLS.SAN) > 0 {
 			fmt.Printf("  SAN:       %v\n", r.TLS.SAN)
@@ -178,13 +266,23 @@ func PrintReport(r types.AnalysisResult) {
 		fmt.Println()
 	}
 
-	if r.Network.IPVersion != "" || r.Network.ReverseDNS != "" {
+	if r.Network.IPVersion != "" || r.Network.ReverseDNS != "" || len(r.Network.Hops) > 0 {
 		fmt.Println("Network Information:")
 		if r.Network.IPVersion != "" {
 			fmt.Printf("  IP Version:   %s\n", r.Network.IPVersion)
 		}
 		if r.Network.ReverseDNS != "" {
 			fmt.Printf("  Reverse DNS:  %s\n", r.Network.ReverseDNS)
+		}
+		if len(r.Network.Hops) > 0 {
+			fmt.Printf("\n  Network Hops (%d total):\n", len(r.Network.Hops))
+			for _, hop := range r.Network.Hops {
+				if hop.Hostname != "" {
+					fmt.Printf("    %2d. %-15s %-40s %s\n", hop.Hop, hop.IP, hop.Hostname, hop.RTT)
+				} else {
+					fmt.Printf("    %2d. %-15s %s\n", hop.Hop, hop.IP, hop.RTT)
+				}
+			}
 		}
 		fmt.Println()
 	}
@@ -224,7 +322,9 @@ func PrintReport(r types.AnalysisResult) {
 		if r.HTTP.ContentLength > 0 {
 			fmt.Printf("  Size:     %d bytes\n", r.HTTP.ContentLength)
 		}
-		fmt.Printf("  Latency:  %s\n", r.HTTP.Duration)
+		if r.HTTP.Duration != "" {
+			fmt.Printf("  Latency:  %s\n", r.HTTP.Duration)
+		}
 		if len(r.HTTP.RedirectChain) > 0 {
 			fmt.Printf("  Redirects: %v\n", r.HTTP.RedirectChain)
 		}
@@ -251,9 +351,11 @@ func PrintReport(r types.AnalysisResult) {
 			}
 		}
 
-		if r.Performance.DNSLookup != "" {
+		if r.Performance.DNSLookup != "" || r.Performance.TCPConnect != "" || r.Performance.TLSHandshake != "" || r.Performance.FirstByte != "" || r.Performance.TotalTime != "" {
 			fmt.Println("\nPerformance Metrics:")
-			fmt.Printf("  DNS Lookup:     %s\n", r.Performance.DNSLookup)
+			if r.Performance.DNSLookup != "" {
+				fmt.Printf("  DNS Lookup:     %s\n", r.Performance.DNSLookup)
+			}
 			if r.Performance.TCPConnect != "" {
 				fmt.Printf("  TCP Connect:    %s\n", r.Performance.TCPConnect)
 			}
@@ -268,12 +370,32 @@ func PrintReport(r types.AnalysisResult) {
 			}
 		}
 
-		fmt.Println("\nSecurity Headers:")
-		for header, value := range r.HTTP.SecurityHeaders {
-			if value == "Not Set" {
-				fmt.Printf("  %-30s ⚠️  %s\n", header+":", value)
-			} else {
-				fmt.Printf("  %-30s ✓  %s\n", header+":", value)
+		// Show security headers - all if verbose, only set ones otherwise
+		if verbose {
+			fmt.Println("\nSecurity Headers:")
+			for header, value := range r.HTTP.SecurityHeaders {
+				if value == "Not Set" {
+					fmt.Printf("  %-30s ⚠️  %s\n", header+":", value)
+				} else {
+					fmt.Printf("  %-30s ✓  %s\n", header+":", value)
+				}
+			}
+		} else {
+			hasSetHeaders := false
+			for _, value := range r.HTTP.SecurityHeaders {
+				if value != "Not Set" {
+					hasSetHeaders = true
+					break
+				}
+			}
+
+			if hasSetHeaders {
+				fmt.Println("\nSecurity Headers:")
+				for header, value := range r.HTTP.SecurityHeaders {
+					if value != "Not Set" {
+						fmt.Printf("  %-30s ✓  %s\n", header+":", value)
+					}
+				}
 			}
 		}
 	}
