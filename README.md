@@ -2,6 +2,10 @@
 
 A comprehensive network analysis tool written in Go that provides detailed information about hosts, including DNS records, TLS/SSL certificates, HTTP responses, geolocation, security headers, and infrastructure detection. Features intelligent analysis that highlights important security findings and unusual configurations.
 
+## Disclaimer
+
+This tool is intended for educational and authorized security testing purposes only. It is not designed or intended to be used for unauthorized reconnaissance or malicious activities. The author assumes no responsibility for any misuse of this tool or any damage caused by its use. Users are solely responsible for ensuring they have proper authorization before scanning any target.
+
 ## Features
 
 ### 🔍 Key Findings Analysis
@@ -331,3 +335,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 MIT License
+

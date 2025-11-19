@@ -124,6 +124,38 @@ func checkSecurityHeaders(headers nethttp.Header) map[string]string {
 	return secHeaders
 }
 
+func detectPlugins(body string) []string {
+	var plugins []string
+	// Regex to find plugins in wp-content/plugins/
+	// Matches: wp-content/plugins/plugin-name/
+	// Also tries to capture version if present in query string: ?ver=1.2.3
+	pluginRegex := regexp.MustCompile(`wp-content/plugins/([a-zA-Z0-9\-_]+)(?:[^"']*?[?&]ver=([\d.]+))?`)
+
+	matches := pluginRegex.FindAllStringSubmatch(body, -1)
+	seen := make(map[string]bool)
+
+	for _, match := range matches {
+		if len(match) > 1 {
+			name := match[1]
+			version := ""
+			if len(match) > 2 {
+				version = match[2]
+			}
+
+			fullName := name
+			if version != "" {
+				fullName = name + " " + version
+			}
+
+			if !seen[fullName] {
+				plugins = append(plugins, fullName)
+				seen[fullName] = true
+			}
+		}
+	}
+	return plugins
+}
+
 func detectTechStack(headers nethttp.Header, body string) types.TechFingerprint {
 	tech := types.TechFingerprint{}
 	if server := headers.Get("Server"); server != "" {
@@ -223,6 +255,8 @@ func detectTechStack(headers nethttp.Header, body string) types.TechFingerprint 
 				tech.CMS = "Drupal"
 			}
 		}
+
+		tech.Plugins = detectPlugins(body)
 	}
 	return tech
 }

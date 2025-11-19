@@ -99,6 +99,7 @@ type TechFingerprint struct {
 	CMS         string   `json:"cms"`
 	JavaScript  []string `json:"javascript"`
 	Analytics   []string `json:"analytics"`
+	Plugins     []string `json:"plugins"`
 }
 
 type ServiceMeshInfo struct {

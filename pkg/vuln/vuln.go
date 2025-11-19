@@ -63,6 +63,9 @@ func IdentifyComponents(httpInfo types.HTTPInfo, tlsInfo types.TLSInfo) []types.
 	for _, js := range httpInfo.TechStack.JavaScript {
 		add(js, "JavaScript detection")
 	}
+	for _, plugin := range httpInfo.TechStack.Plugins {
+		add(plugin, "Plugin detection")
+	}
 
 	if tlsInfo.Subject != "" {
 		add(tlsInfo.Subject, "Certificate subject")
