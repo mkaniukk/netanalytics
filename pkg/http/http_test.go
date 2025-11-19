@@ -1,0 +1,123 @@
+package http
+
+import (
+	"net/http"
+	"testing"
+
+	"netanalyze/pkg/types"
+)
+
+func TestDetectOS(t *testing.T) {
+	tests := []struct {
+		name    string
+		headers http.Header
+		server  string
+		want    string
+	}{
+		{
+			name:    "Ubuntu",
+			headers: http.Header{},
+			server:  "Apache/2.4.41 (Ubuntu)",
+			want:    "Ubuntu Linux",
+		},
+		{
+			name:    "Windows IIS",
+			headers: http.Header{},
+			server:  "Microsoft-IIS/10.0",
+			want:    "Windows (IIS)",
+		},
+		{
+			name: "PHP via X-Powered-By",
+			headers: http.Header{
+				"X-Powered-By": []string{"PHP/7.4"},
+			},
+			server: "", // Empty server to test fallback
+			want:   "Unix-like (PHP)",
+		},
+		{
+			name: "ASP.NET via X-Powered-By",
+			headers: http.Header{
+				"X-Powered-By": []string{"ASP.NET"},
+			},
+			server: "Microsoft-IIS",
+			want:   "Windows (IIS)",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := detectOS(tt.headers, tt.server); got != tt.want {
+				t.Errorf("detectOS() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDetectTechStack(t *testing.T) {
+	tests := []struct {
+		name    string
+		headers http.Header
+		body    string
+		want    types.TechFingerprint
+	}{
+		{
+			name: "WordPress",
+			headers: http.Header{
+				"Server": []string{"Apache"},
+			},
+			body: `<html><meta name="generator" content="WordPress 5.8" /></html>`,
+			want: types.TechFingerprint{
+				WebServer: "Apache",
+				CMS:       "WordPress 5.8",
+			},
+		},
+		{
+			name: "React",
+			headers: http.Header{
+				"Server": []string{"nginx"},
+			},
+			body: `<html><script src="react.production.min.js"></script></html>`,
+			want: types.TechFingerprint{
+				WebServer:  "nginx",
+				JavaScript: []string{"React"},
+			},
+		},
+		{
+			name: "HTTP/2",
+			headers: http.Header{
+				"X-Firefox-Spdy": []string{"h2"},
+			},
+			body: "",
+			want: types.TechFingerprint{
+				HTTPVersion: "HTTP/2",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := detectTechStack(tt.headers, tt.body)
+			if got.WebServer != tt.want.WebServer {
+				t.Errorf("WebServer = %v, want %v", got.WebServer, tt.want.WebServer)
+			}
+			if got.CMS != tt.want.CMS {
+				t.Errorf("CMS = %v, want %v", got.CMS, tt.want.CMS)
+			}
+			if got.HTTPVersion != tt.want.HTTPVersion {
+				t.Errorf("HTTPVersion = %v, want %v", got.HTTPVersion, tt.want.HTTPVersion)
+			}
+			if len(tt.want.JavaScript) > 0 {
+				found := false
+				for _, j := range got.JavaScript {
+					if j == tt.want.JavaScript[0] {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Errorf("JavaScript missing %v", tt.want.JavaScript[0])
+				}
+			}
+		})
+	}
+}

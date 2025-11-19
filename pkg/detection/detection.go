@@ -28,7 +28,7 @@ func DetectCDN(headers http.Header) types.CDNInfo {
 		"KeyCDN":       {"X-Edge-Location"},
 		"StackPath":    {"X-Sp-Cache"},
 		"BunnyCDN":     {"Bunny-Cache-Status"},
-		"Google Cloud": {"X-Goog-Generation", "Via"},
+		"Google Cloud": {"X-Goog-Generation"},
 	}
 
 	for provider, headerKeys := range cdnSignatures {
