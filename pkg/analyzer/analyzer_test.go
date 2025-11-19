@@ -8,11 +8,11 @@ import (
 
 func TestAnalyzeTLS(t *testing.T) {
 	tests := []struct {
-		name     string
-		tls      types.TLSInfo
-		grade    types.SSLGrade
-		wantSev  string
-		wantMsg  string
+		name    string
+		tls     types.TLSInfo
+		grade   types.SSLGrade
+		wantSev string
+		wantMsg string
 	}{
 		{
 			name: "TLS 1.3 Positive",

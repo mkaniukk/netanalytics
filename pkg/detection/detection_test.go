@@ -98,7 +98,7 @@ func TestDetectCloudProvider(t *testing.T) {
 			wantProv: "Microsoft Azure",
 		},
 		{
-			name: "DigitalOcean via GeoInfo",
+			name:    "DigitalOcean via GeoInfo",
 			headers: map[string]string{},
 			geoInfo: []types.GeoInfo{
 				{Organization: "DigitalOcean, LLC"},

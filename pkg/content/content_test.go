@@ -26,8 +26,8 @@ func TestFetchResourceMetadata(t *testing.T) {
 	client := server.Client()
 
 	tests := []struct {
-		name     string
-		path     string
+		name      string
+		path      string
 		wantFound bool
 		wantSize  int64
 	}{
