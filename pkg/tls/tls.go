@@ -16,6 +16,10 @@ func tlsVersion(v uint16) string {
 		return "TLS 1.3"
 	case cryptotls.VersionTLS12:
 		return "TLS 1.2"
+	case cryptotls.VersionTLS11:
+		return "TLS 1.1"
+	case cryptotls.VersionTLS10:
+		return "TLS 1.0"
 	default:
 		return "Unknown"
 	}

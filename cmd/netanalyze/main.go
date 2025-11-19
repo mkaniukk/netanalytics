@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"netanalyze/pkg/analyzer"
+	"netanalyze/pkg/content"
 	"netanalyze/pkg/detection"
 	"netanalyze/pkg/dns"
 	"netanalyze/pkg/http"
@@ -17,6 +18,7 @@ import (
 	"netanalyze/pkg/output"
 	"netanalyze/pkg/tls"
 	"netanalyze/pkg/types"
+	"netanalyze/pkg/vuln"
 )
 
 func main() {
@@ -25,6 +27,7 @@ func main() {
 	enablePorts := flag.Bool("ports", false, "Scan common ports")
 	enablePerf := flag.Bool("perf", false, "Show performance metrics")
 	enableTrace := flag.Bool("trace", false, "Show network hops (traceroute)")
+	enableCVE := flag.Bool("cve", false, "Attempt CVE lookups for detected technologies (uses NVD API)")
 	verbose := flag.Bool("verbose", false, "Show all details including non-detected items")
 	flag.Parse()
 
@@ -37,6 +40,7 @@ func main() {
 		fmt.Println("  --perf         Show performance metrics")
 		fmt.Println("  --trace        Show network hops (traceroute)")
 		fmt.Println("  --verbose      Show all details including non-detected items")
+		fmt.Println("  --cve          Attempt to find related CVEs (experimental)")
 		os.Exit(1)
 	}
 
@@ -52,6 +56,7 @@ func main() {
 	result.DNS = dns.AnalyzeDNS(host)
 	result.IP = result.DNS.A
 	result.Network = network.AnalyzeNetwork(host, result.IP)
+	result.EmailSecurity = dns.AnalyzeEmailSecurity(host)
 
 	result.TLS = tls.AnalyzeTLS(host)
 	if result.TLS.Version != "" {
@@ -59,10 +64,15 @@ func main() {
 	}
 
 	result.HTTP = http.AnalyzeHTTP("https://" + host)
+	result.Content = content.AnalyzeContent(host, "https")
 	result.CDN = detection.DetectCDN(result.HTTP.Headers)
 	result.ServiceMesh = detection.DetectServiceMesh(result.HTTP.Headers)
 	result.LoadBalancer = detection.DetectLoadBalancer(result.HTTP.Headers)
 	result.Container = detection.DetectContainerEnvironment(result.HTTP.Headers, result.DNS)
+	result.Components = vuln.IdentifyComponents(result.HTTP, result.TLS)
+	if *enableCVE {
+		result.Vulnerabilities = vuln.LookupCVEs(result.Components)
+	}
 
 	if *enableGeo && len(result.IP) > 0 {
 		for _, ip := range result.IP {
