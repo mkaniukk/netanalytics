@@ -92,6 +92,18 @@ func TestDetectTechStack(t *testing.T) {
 				HTTPVersion: "HTTP/2",
 			},
 		},
+		{
+			name: "WordPress Plugins",
+			headers: http.Header{},
+			body: `<html>
+				<link rel='stylesheet' id='contact-form-7-css'  href='https://example.com/wp-content/plugins/contact-form-7/includes/css/styles.css?ver=5.4.2' media='all' />
+				<script src='https://example.com/wp-content/plugins/yoast-seo/js/frontend.js?ver=16.7'></script>
+			</html>`,
+			want: types.TechFingerprint{
+				CMS:     "WordPress",
+				Plugins: []string{"contact-form-7 5.4.2", "yoast-seo 16.7"},
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -116,6 +128,20 @@ func TestDetectTechStack(t *testing.T) {
 				}
 				if !found {
 					t.Errorf("JavaScript missing %v", tt.want.JavaScript[0])
+				}
+			}
+			if len(tt.want.Plugins) > 0 {
+				for _, wantP := range tt.want.Plugins {
+					found := false
+					for _, gotP := range got.Plugins {
+						if gotP == wantP {
+							found = true
+							break
+						}
+					}
+					if !found {
+						t.Errorf("Plugins missing %v, got %v", wantP, got.Plugins)
+					}
 				}
 			}
 		})

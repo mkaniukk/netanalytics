@@ -64,6 +64,18 @@ func TestIdentifyComponents(t *testing.T) {
 				{Name: "nginx", Version: "", Source: "Server header"},
 			},
 		},
+		{
+			name: "WordPress Plugins",
+			httpInfo: types.HTTPInfo{
+				TechStack: types.TechFingerprint{
+					Plugins: []string{"contact-form-7 5.4.2", "yoast-seo 16.7"},
+				},
+			},
+			want: []types.SoftwareComponent{
+				{Name: "contact-form-7", Version: "5.4.2", Source: "Plugin detection"},
+				{Name: "yoast-seo", Version: "16.7", Source: "Plugin detection"},
+			},
+		},
 	}
 
 	for _, tt := range tests {
