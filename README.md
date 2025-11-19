@@ -78,6 +78,17 @@ A comprehensive network analysis tool written in Go that provides detailed infor
 - Total request time
 - Performance warnings for slow responses
 
+### Content & Email Intelligence
+- robots.txt, sitemap.xml, and security.txt discovery with byte sizes
+- Highlights missing security.txt for quick hardening wins
+- SPF and DMARC record inspection including enforced policy level
+
+### Vulnerability Intelligence (Experimental)
+- `--cve` flag performs opportunistic CVE lookups via the NVD API
+- Automatically fingerprints web stack components (server, CMS, JS libraries, certificate metadata)
+- Displays matching CVE IDs with severity, CVSS score, descriptions, and reference links
+- Set `NVD_API_KEY` to raise rate limits; anonymous access still works for light usage
+
 ### Security Analysis
 - Security headers check (HSTS, CSP, X-Frame-Options, etc.)
 - SSL/TLS configuration grading
@@ -125,6 +136,7 @@ go build -o netanalyze ./cmd/netanalyze
 - `--perf` - Show performance metrics
 - `--trace` - Show network hops (traceroute)
 - `--verbose` - Show all details including non-detected items
+- `--cve` - Attempt CVE lookups for detected components (optional `NVD_API_KEY`)
 
 ## Examples
 
@@ -141,6 +153,11 @@ go build -o netanalyze ./cmd/netanalyze
 ### Quick security audit
 ```bash
 ./netanalyze --verbose example.com
+```
+
+### Try CVE lookups
+```bash
+NVD_API_KEY=<your-api-key> ./netanalyze --cve example.com
 ```
 
 ### Export to JSON file
@@ -292,6 +309,8 @@ This keeps the output focused and readable by default while still providing full
 
 The tool uses the free ip-api.com service for geolocation data. No API key required for basic usage (limited to 45 requests per minute).
 
+For CVE lookups it calls the public NVD 2.0 API. Supplying an `NVD_API_KEY` environment variable is optional but recommended to avoid throttling when scanning multiple hosts.
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
@@ -306,6 +325,8 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 - ✅ Added clean output mode (hides non-detected items by default)
 - ✅ Enhanced security analysis with actionable recommendations
 - ✅ Added support for HTTP/3, CAA records, and advanced infrastructure detection
+- ✅ Added content discovery, email security checks, and security.txt detection
+- ✅ Experimental CVE lookup workflow with `--cve` flag and software component fingerprinting
 
 ## License
 

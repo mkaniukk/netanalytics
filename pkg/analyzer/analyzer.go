@@ -41,7 +41,117 @@ func AnalyzeFindings(result *types.AnalysisResult) []types.Finding {
 		findings = append(findings, analyzePorts(result.Ports)...)
 	}
 
+	// Content Analysis
+	findings = append(findings, analyzeContent(result.Content)...)
+
+	// Email Security
+	findings = append(findings, analyzeEmailSecurity(result.EmailSecurity)...)
+
+	// CVE Findings
+	findings = append(findings, analyzeCVEs(result.Vulnerabilities)...)
+
 	return findings
+}
+
+func analyzeContent(content types.ContentInfo) []types.Finding {
+	var findings []types.Finding
+
+	if content.RobotsTxt {
+		findings = append(findings, types.Finding{
+			Severity: "info",
+			Category: "Content",
+			Message:  "robots.txt found",
+			Detail:   fmt.Sprintf("Size: %d bytes", content.RobotsSize),
+		})
+	}
+
+	if content.SitemapXml {
+		findings = append(findings, types.Finding{
+			Severity: "positive",
+			Category: "Content",
+			Message:  "sitemap.xml found",
+			Detail:   fmt.Sprintf("Size: %d bytes", content.SitemapSize),
+		})
+	}
+
+	if content.SecurityTxt {
+		findings = append(findings, types.Finding{
+			Severity: "positive",
+			Category: "Security",
+			Message:  "security.txt found",
+			Detail:   "Security policy file detected in standard location",
+		})
+	}
+
+	return findings
+}
+
+func analyzeEmailSecurity(email types.EmailSecurityInfo) []types.Finding {
+	var findings []types.Finding
+
+	if email.DMARC {
+		findings = append(findings, types.Finding{
+			Severity: "positive",
+			Category: "Security",
+			Message:  "DMARC record configured",
+			Detail:   "Domain-based Message Authentication, Reporting, and Conformance is enabled",
+		})
+	} else {
+		findings = append(findings, types.Finding{
+			Severity: "info",
+			Category: "Security",
+			Message:  "No DMARC record found",
+			Detail:   "Consider enabling DMARC to prevent email spoofing",
+		})
+	}
+
+	return findings
+}
+
+func analyzeCVEs(results []types.CVEResult) []types.Finding {
+	var findings []types.Finding
+
+	for _, result := range results {
+		if len(result.Matches) == 0 {
+			continue
+		}
+		for _, entry := range result.Matches {
+			severity := classifyCVESeverity(entry)
+			message := fmt.Sprintf("%s impacted by %s", strings.TrimSpace(result.Component.Name+" "+result.Component.Version), entry.ID)
+			detailParts := []string{}
+			if entry.Description != "" {
+				detailParts = append(detailParts, entry.Description)
+			}
+			if entry.URL != "" {
+				detailParts = append(detailParts, entry.URL)
+			}
+			detail := strings.Join(detailParts, " ")
+			if entry.CVSS > 0 {
+				detail = fmt.Sprintf("CVSS %.1f %s. %s", entry.CVSS, strings.ToUpper(entry.Severity), detail)
+			}
+			findings = append(findings, types.Finding{
+				Severity: severity,
+				Category: "Vulnerabilities",
+				Message:  message,
+				Detail:   detail,
+			})
+		}
+	}
+
+	return findings
+}
+
+func classifyCVESeverity(entry types.CVEEntry) string {
+	switch {
+	case entry.CVSS >= 9 || strings.EqualFold(entry.Severity, "CRITICAL"):
+		return "critical"
+	case entry.CVSS >= 7 || strings.EqualFold(entry.Severity, "HIGH"):
+		return "warning"
+	case entry.CVSS > 0:
+		return "info"
+	default:
+		return "info"
+	}
 }
 
 func analyzeTLS(tls types.TLSInfo, grade types.SSLGrade) []types.Finding {

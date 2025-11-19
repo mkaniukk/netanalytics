@@ -351,6 +351,89 @@ func PrintReport(r types.AnalysisResult, verbose bool) {
 			}
 		}
 
+		// Content Information
+		if r.Content.RobotsTxt || r.Content.SitemapXml || r.Content.SecurityTxt {
+			fmt.Println("\nContent Information:")
+			if r.Content.RobotsTxt {
+				fmt.Printf("  robots.txt:    Found (%d bytes)\n", r.Content.RobotsSize)
+			} else {
+				fmt.Printf("  robots.txt:    Not Found\n")
+			}
+			if r.Content.SitemapXml {
+				fmt.Printf("  sitemap.xml:   Found (%d bytes)\n", r.Content.SitemapSize)
+			} else {
+				fmt.Printf("  sitemap.xml:   Not Found\n")
+			}
+			if r.Content.SecurityTxt {
+				fmt.Printf("  security.txt:  Found (%d bytes)\n", r.Content.SecuritySize)
+			} else {
+				fmt.Printf("  security.txt:  Not Found\n")
+			}
+		}
+
+		// Email Security
+		if r.EmailSecurity.SPF || r.EmailSecurity.DMARC {
+			fmt.Println("\nEmail Security:")
+			if r.EmailSecurity.SPF {
+				fmt.Printf("  SPF Record:    %s\n", r.EmailSecurity.SPFRecord)
+			} else {
+				fmt.Printf("  SPF Record:    Not Found\n")
+			}
+			if r.EmailSecurity.DMARC {
+				fmt.Printf("  DMARC Record:  %s\n", r.EmailSecurity.DMARCRecord)
+				if r.EmailSecurity.DMARCPolicy != "" {
+					fmt.Printf("  DMARC Policy:  %s\n", r.EmailSecurity.DMARCPolicy)
+				}
+			} else {
+				fmt.Printf("  DMARC Record:  Not Found\n")
+			}
+		}
+
+		if len(r.Components) > 0 {
+			fmt.Println("\nSoftware Components:")
+			for _, comp := range r.Components {
+				label := strings.TrimSpace(comp.Name + " " + comp.Version)
+				if label == "" {
+					label = comp.Name
+				}
+				if comp.Source != "" {
+					fmt.Printf("  %s (%s)\n", label, comp.Source)
+				} else {
+					fmt.Printf("  %s\n", label)
+				}
+			}
+		}
+
+		if len(r.Vulnerabilities) > 0 {
+			fmt.Println("\nCVE Findings:")
+			for _, result := range r.Vulnerabilities {
+				label := strings.TrimSpace(result.Component.Name + " " + result.Component.Version)
+				if label == "" {
+					label = "Unknown Component"
+				}
+				if result.Component.Source != "" {
+					fmt.Printf("  %s [%s]:\n", label, result.Component.Source)
+				} else {
+					fmt.Printf("  %s:\n", label)
+				}
+				for _, entry := range result.Matches {
+					score := ""
+					if entry.CVSS > 0 {
+						score = fmt.Sprintf(" (CVSS %.1f %s)", entry.CVSS, strings.ToUpper(entry.Severity))
+					} else if entry.Severity != "" {
+						score = fmt.Sprintf(" (%s)", strings.ToUpper(entry.Severity))
+					}
+					fmt.Printf("    - %s%s\n", entry.ID, score)
+					if entry.Description != "" {
+						fmt.Printf("      %s\n", entry.Description)
+					}
+					if entry.URL != "" {
+						fmt.Printf("      %s\n", entry.URL)
+					}
+				}
+			}
+		}
+
 		if r.Performance.DNSLookup != "" || r.Performance.TCPConnect != "" || r.Performance.TLSHandshake != "" || r.Performance.FirstByte != "" || r.Performance.TotalTime != "" {
 			fmt.Println("\nPerformance Metrics:")
 			if r.Performance.DNSLookup != "" {

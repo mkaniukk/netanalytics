@@ -3,6 +3,7 @@ package dns
 import (
 	"context"
 	"net"
+	"strings"
 	"time"
 
 	"netanalyze/pkg/types"
@@ -82,5 +83,50 @@ func AnalyzeDNS(host string) types.DNSInfo {
 	}
 
 	info.Duration = time.Since(start).String()
+	return info
+}
+
+func AnalyzeEmailSecurity(host string) types.EmailSecurityInfo {
+	info := types.EmailSecurityInfo{}
+
+	// Check SPF
+	txts, _ := net.LookupTXT(host)
+	for _, txt := range txts {
+		if len(txt) > 0 && (txt[0:6] == "v=spf1" || txt == "v=spf1") {
+			info.SPF = true
+			info.SPFRecord = txt
+			break
+		}
+		// Handle case where SPF might be split across multiple strings in a single TXT record?
+		// net.LookupTXT returns []string, where each string is a record.
+		// Actually, SPF records start with v=spf1.
+		if len(txt) >= 6 && txt[0:6] == "v=spf1" {
+			info.SPF = true
+			info.SPFRecord = txt
+			break
+		}
+	}
+
+	// Check DMARC
+	dmarcHost := "_dmarc." + host
+	dmarcTxts, _ := net.LookupTXT(dmarcHost)
+	for _, txt := range dmarcTxts {
+		if len(txt) >= 8 && txt[0:8] == "v=DMARC1" {
+			info.DMARC = true
+			info.DMARCRecord = txt
+
+			// Parse policy
+			parts := strings.Split(txt, ";")
+			for _, part := range parts {
+				part = strings.TrimSpace(part)
+				if strings.HasPrefix(part, "p=") {
+					info.DMARCPolicy = strings.TrimPrefix(part, "p=")
+					break
+				}
+			}
+			break
+		}
+	}
+
 	return info
 }

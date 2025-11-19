@@ -162,22 +162,63 @@ type Finding struct {
 	Detail   string
 }
 
+type ContentInfo struct {
+	RobotsTxt    bool  `json:"robots_txt"`
+	SitemapXml   bool  `json:"sitemap_xml"`
+	SecurityTxt  bool  `json:"security_txt"`
+	RobotsSize   int64 `json:"robots_size"`
+	SitemapSize  int64 `json:"sitemap_size"`
+	SecuritySize int64 `json:"security_size"`
+}
+
+type EmailSecurityInfo struct {
+	SPF         bool   `json:"spf"`
+	SPFRecord   string `json:"spf_record"`
+	DMARC       bool   `json:"dmarc"`
+	DMARCRecord string `json:"dmarc_record"`
+	DMARCPolicy string `json:"dmarc_policy"`
+}
+
+type SoftwareComponent struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
+	Source  string `json:"source"`
+}
+
+type CVEEntry struct {
+	ID          string  `json:"id"`
+	Severity    string  `json:"severity"`
+	CVSS        float64 `json:"cvss"`
+	Description string  `json:"description"`
+	Published   string  `json:"published"`
+	URL         string  `json:"url"`
+}
+
+type CVEResult struct {
+	Component SoftwareComponent `json:"component"`
+	Matches   []CVEEntry        `json:"matches"`
+}
+
 type AnalysisResult struct {
-	Host          string
-	Timestamp     string
-	IP            []string
-	DNS           DNSInfo
-	TLS           TLSInfo
-	SSLGrade      SSLGrade
-	HTTP          HTTPInfo
-	Geo           []GeoInfo
-	Ports         []PortInfo
-	Performance   PerformanceInfo
-	CDN           CDNInfo
-	CloudProvider CloudProviderInfo
-	ServiceMesh   ServiceMeshInfo
-	LoadBalancer  LoadBalancerInfo
-	Container     ContainerInfo
-	Network       NetworkInfo
-	Findings      []Finding
+	Host            string
+	Timestamp       string
+	IP              []string
+	DNS             DNSInfo
+	TLS             TLSInfo
+	SSLGrade        SSLGrade
+	HTTP            HTTPInfo
+	Content         ContentInfo
+	EmailSecurity   EmailSecurityInfo
+	Components      []SoftwareComponent
+	Vulnerabilities []CVEResult
+	Geo             []GeoInfo
+	Ports           []PortInfo
+	Performance     PerformanceInfo
+	CDN             CDNInfo
+	CloudProvider   CloudProviderInfo
+	ServiceMesh     ServiceMeshInfo
+	LoadBalancer    LoadBalancerInfo
+	Container       ContainerInfo
+	Network         NetworkInfo
+	Findings        []Finding
 }
