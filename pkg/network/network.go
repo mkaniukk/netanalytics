@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"netanalyze/pkg/types"
+	"github.com/mkaniukk/netanalytics/pkg/types"
 )
 
 // TraceRoute performs a traceroute to the specified host

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"netanalyze/pkg/types"
+	"github.com/mkaniukk/netanalytics/pkg/types"
 )
 
 func printFindings(findings []types.Finding) {
@@ -72,6 +72,9 @@ func PrintReport(r types.AnalysisResult, verbose bool) {
 	fmt.Println("\n" + strings.Repeat("=", 50))
 	fmt.Printf("Host: %s\n", r.Host)
 	fmt.Printf("Time: %s\n", r.Timestamp)
+	if len(r.IP) > 0 {
+		fmt.Printf("Resolved IP(s): %v\n", r.IP)
+	}
 	fmt.Println(strings.Repeat("=", 50))
 
 	// Print key findings first
@@ -368,6 +371,13 @@ func PrintReport(r types.AnalysisResult, verbose bool) {
 				fmt.Printf("  security.txt:  Found (%d bytes)\n", r.Content.SecuritySize)
 			} else {
 				fmt.Printf("  security.txt:  Not Found\n")
+			}
+		}
+
+		if len(r.Content.ExposedFiles) > 0 {
+			fmt.Println("\nExposed Files:")
+			for _, file := range r.Content.ExposedFiles {
+				fmt.Printf("  ⚠️  %s\n", file)
 			}
 		}
 

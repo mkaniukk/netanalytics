@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"netanalyze/pkg/types"
+	"github.com/mkaniukk/netanalytics/pkg/types"
 )
 
 func fetchResourceMetadata(client *http.Client, url string) (bool, int64) {
@@ -70,6 +70,41 @@ func AnalyzeContent(host string, protocol string) types.ContentInfo {
 			info.SecurityTxt = true
 			info.SecuritySize = size
 			break
+		}
+	}
+
+	// Check for exposed sensitive files
+	exposedFiles := []string{
+		"/.htaccess",
+		"/.htpasswd",
+		"/.env",
+		"/nginx.conf",
+		"/web.config",
+		"/server-status",
+		"/nginx_status",
+		"/.git/HEAD",
+		"/phpinfo.php",
+		"/info.php",
+		"/.DS_Store",
+		"/.svn/HEAD",
+		"/Dockerfile",
+		"/docker-compose.yml",
+		"/package.json",
+		"/composer.json",
+		"/Gemfile",
+		"/requirements.txt",
+		"/wp-config.php.bak",
+		"/config.php.bak",
+		"/README.md",
+		"/LICENSE",
+		"/CHANGELOG.md",
+		"/error.log",
+		"/debug.log",
+	}
+
+	for _, file := range exposedFiles {
+		if found, _ := fetchResourceMetadata(client, baseURL+file); found {
+			info.ExposedFiles = append(info.ExposedFiles, file)
 		}
 	}
 

@@ -9,16 +9,16 @@ import (
 	"strings"
 	"time"
 
-	"netanalyze/pkg/analyzer"
-	"netanalyze/pkg/content"
-	"netanalyze/pkg/detection"
-	"netanalyze/pkg/dns"
-	"netanalyze/pkg/http"
-	"netanalyze/pkg/network"
-	"netanalyze/pkg/output"
-	"netanalyze/pkg/tls"
-	"netanalyze/pkg/types"
-	"netanalyze/pkg/vuln"
+	"github.com/mkaniukk/netanalytics/pkg/analyzer"
+	"github.com/mkaniukk/netanalytics/pkg/content"
+	"github.com/mkaniukk/netanalytics/pkg/detection"
+	"github.com/mkaniukk/netanalytics/pkg/dns"
+	"github.com/mkaniukk/netanalytics/pkg/http"
+	"github.com/mkaniukk/netanalytics/pkg/network"
+	"github.com/mkaniukk/netanalytics/pkg/output"
+	"github.com/mkaniukk/netanalytics/pkg/tls"
+	"github.com/mkaniukk/netanalytics/pkg/types"
+	"github.com/mkaniukk/netanalytics/pkg/vuln"
 )
 
 func main() {

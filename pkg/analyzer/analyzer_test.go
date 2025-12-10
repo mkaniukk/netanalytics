@@ -3,7 +3,7 @@ package analyzer
 import (
 	"testing"
 
-	"netanalyze/pkg/types"
+	"github.com/mkaniukk/netanalytics/pkg/types"
 )
 
 func TestAnalyzeTLS(t *testing.T) {

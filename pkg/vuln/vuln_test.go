@@ -3,7 +3,7 @@ package vuln
 import (
 	"testing"
 
-	"netanalyze/pkg/types"
+	"github.com/mkaniukk/netanalytics/pkg/types"
 )
 
 func TestIdentifyComponents(t *testing.T) {

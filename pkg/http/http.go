@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"netanalyze/pkg/types"
+	"github.com/mkaniukk/netanalytics/pkg/types"
 )
 
 func detectOS(headers nethttp.Header, server string) string {

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"netanalyze/pkg/types"
+	"github.com/mkaniukk/netanalytics/pkg/types"
 )
 
 // AnalyzeFindings examines the analysis results and identifies important/unusual findings
@@ -80,6 +80,23 @@ func analyzeContent(content types.ContentInfo) []types.Finding {
 			Category: "Security",
 			Message:  "security.txt found",
 			Detail:   "Security policy file detected in standard location",
+		})
+	}
+
+	for _, file := range content.ExposedFiles {
+		severity := "warning"
+		if file == "/.env" || file == "/.htaccess" || file == "/.htpasswd" || file == "/.git/HEAD" ||
+			file == "/wp-config.php.bak" || file == "/config.php.bak" || file == "/error.log" || file == "/debug.log" || file == "/.svn/HEAD" ||
+			file == "/nginx.conf" || file == "/web.config" || file == "/Dockerfile" || file == "/docker-compose.yml" {
+			severity = "critical"
+		} else if file == "/README.md" || file == "/LICENSE" || file == "/CHANGELOG.md" {
+			severity = "info"
+		}
+		findings = append(findings, types.Finding{
+			Severity: severity,
+			Category: "Security",
+			Message:  fmt.Sprintf("Exposed file detected: %s", file),
+			Detail:   "Sensitive file exposed to public access",
 		})
 	}
 

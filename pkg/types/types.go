@@ -164,12 +164,13 @@ type Finding struct {
 }
 
 type ContentInfo struct {
-	RobotsTxt    bool  `json:"robots_txt"`
-	SitemapXml   bool  `json:"sitemap_xml"`
-	SecurityTxt  bool  `json:"security_txt"`
-	RobotsSize   int64 `json:"robots_size"`
-	SitemapSize  int64 `json:"sitemap_size"`
-	SecuritySize int64 `json:"security_size"`
+	RobotsTxt    bool     `json:"robots_txt"`
+	SitemapXml   bool     `json:"sitemap_xml"`
+	SecurityTxt  bool     `json:"security_txt"`
+	RobotsSize   int64    `json:"robots_size"`
+	SitemapSize  int64    `json:"sitemap_size"`
+	SecuritySize int64    `json:"security_size"`
+	ExposedFiles []string `json:"exposed_files"`
 }
 
 type EmailSecurityInfo struct {

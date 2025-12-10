@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"testing"
 
-	"netanalyze/pkg/types"
+	"github.com/mkaniukk/netanalytics/pkg/types"
 )
 
 func TestTlsVersion(t *testing.T) {

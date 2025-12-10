@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	"netanalyze/pkg/types"
+	"github.com/mkaniukk/netanalytics/pkg/types"
 )
 
 func TestDetectCDN(t *testing.T) {

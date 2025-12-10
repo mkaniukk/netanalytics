@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"netanalyze/pkg/types"
+	"github.com/mkaniukk/netanalytics/pkg/types"
 )
 
 func contains(slice []string, item string) bool {

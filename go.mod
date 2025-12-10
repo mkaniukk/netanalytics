@@ -1,4 +1,4 @@
-module netanalyze
+module github.com/mkaniukk/netanalytics
 
 go 1.25.1
 
