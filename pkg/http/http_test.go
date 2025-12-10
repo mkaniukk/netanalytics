@@ -93,7 +93,7 @@ func TestDetectTechStack(t *testing.T) {
 			},
 		},
 		{
-			name: "WordPress Plugins",
+			name:    "WordPress Plugins",
 			headers: http.Header{},
 			body: `<html>
 				<link rel='stylesheet' id='contact-form-7-css'  href='https://example.com/wp-content/plugins/contact-form-7/includes/css/styles.css?ver=5.4.2' media='all' />
