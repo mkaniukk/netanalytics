@@ -492,4 +492,292 @@ func PrintReport(r types.AnalysisResult, verbose bool) {
 			}
 		}
 	}
+
+	// Print WHOIS information
+	printWHOIS(r.WHOIS)
+
+	// Print Subdomain information
+	printSubdomains(r.Subdomains, verbose)
+
+	// Print DNSSEC information
+	printDNSSEC(r.DNSSEC)
+
+	// Print WAF information
+	printWAF(r.WAF)
+
+	// Print HTTP Methods
+	printHTTPMethods(r.HTTPMethods, verbose)
+
+	// Print CORS information
+	printCORS(r.CORS)
+
+	// Print Latency information
+	printLatency(r.Latency, verbose)
+
+	// Print Security.txt information
+	printSecurityTxt(r.SecurityTxt)
+
+	// Print IPv6 information
+	printIPv6(r.IPv6)
+
+	// Print Redirect information
+	printRedirects(r.Redirects, verbose)
+
+	// Print Banner information
+	printBanners(r.Banners)
+}
+
+func printWHOIS(w types.WHOISInfo) {
+	if w.Registrar == "" {
+		return
+	}
+	fmt.Println("\nWHOIS Information:")
+	fmt.Printf("  Registrar:     %s\n", w.Registrar)
+	if w.Registrant != "" {
+		fmt.Printf("  Registrant:    %s\n", w.Registrant)
+	}
+	if w.CreationDate != "" {
+		fmt.Printf("  Created:       %s\n", w.CreationDate)
+	}
+	if w.DomainAge != "" {
+		fmt.Printf("  Domain Age:    %s\n", w.DomainAge)
+	}
+	if w.UpdatedDate != "" {
+		fmt.Printf("  Last Updated:  %s\n", w.UpdatedDate)
+	}
+	if w.ExpiryDate != "" {
+		fmt.Printf("  Expires:       %s\n", w.ExpiryDate)
+	}
+	if len(w.NameServers) > 0 {
+		fmt.Printf("  Name Servers:  %v\n", w.NameServers)
+	}
+	if len(w.DomainStatus) > 0 {
+		fmt.Printf("  Status:        %v\n", w.DomainStatus)
+	}
+}
+
+func printSubdomains(s types.SubdomainInfo, verbose bool) {
+	if s.Count == 0 {
+		return
+	}
+	fmt.Println("\nSubdomain Enumeration:")
+	fmt.Printf("  Total Found:   %d subdomains\n", s.Count)
+	fmt.Printf("  Sources:       %v\n", s.Sources)
+
+	if len(s.Resolved) > 0 {
+		fmt.Println("  Active Subdomains:")
+		displayCount := len(s.Resolved)
+		if !verbose && displayCount > 10 {
+			displayCount = 10
+		}
+		for i, res := range s.Resolved {
+			if i >= displayCount {
+				fmt.Printf("    ... and %d more (use --verbose to see all)\n", len(s.Resolved)-displayCount)
+				break
+			}
+			if res.Active {
+				if res.CNAME != "" {
+					fmt.Printf("    %s -> %s (CNAME: %s)\n", res.Subdomain, strings.Join(res.IPs, ", "), res.CNAME)
+				} else {
+					fmt.Printf("    %s -> %s\n", res.Subdomain, strings.Join(res.IPs, ", "))
+				}
+			}
+		}
+	}
+}
+
+func printDNSSEC(d types.DNSSECInfo) {
+	if d.Domain == "" {
+		return
+	}
+	fmt.Println("\nDNSSEC:")
+	if d.Enabled {
+		status := "✓ Enabled"
+		if d.Valid {
+			status += " (Valid)"
+		} else {
+			status += " (Incomplete chain)"
+		}
+		fmt.Printf("  Status:       %s\n", status)
+		if d.Algorithm != "" {
+			fmt.Printf("  Algorithm:    %s\n", d.Algorithm)
+		}
+		if d.KeyType != "" {
+			fmt.Printf("  Key Type:     %s\n", d.KeyType)
+		}
+	} else {
+		fmt.Printf("  Status:       Not enabled\n")
+	}
+}
+
+func printWAF(w types.WAFInfo) {
+	if !w.Detected {
+		return
+	}
+	fmt.Println("\nWAF Detection:")
+	fmt.Printf("  Detected:      ✓ %s\n", w.Name)
+	if len(w.Evidence) > 0 {
+		fmt.Printf("  Evidence:      %v\n", w.Evidence)
+	}
+}
+
+func printHTTPMethods(m types.HTTPMethodsInfo, verbose bool) {
+	if len(m.Methods) == 0 {
+		return
+	}
+	fmt.Println("\nHTTP Methods:")
+	fmt.Printf("  Allowed:       %v\n", m.Allowed)
+	if len(m.DangerousMethods) > 0 {
+		fmt.Printf("  ⚠️  Dangerous:  %v\n", m.DangerousMethods)
+	}
+	if verbose {
+		fmt.Println("  Details:")
+		for _, method := range m.Methods {
+			status := "✗"
+			if method.Allowed {
+				status = "✓"
+			}
+			fmt.Printf("    %s %s (%d)\n", status, method.Method, method.StatusCode)
+		}
+	}
+}
+
+func printCORS(c types.CORSInfo) {
+	if !c.Enabled {
+		return
+	}
+	fmt.Println("\nCORS Configuration:")
+	fmt.Printf("  Allow-Origin:       %s\n", c.AllowOrigin)
+	fmt.Printf("  Allow-Credentials:  %t\n", c.AllowCredentials)
+	if c.AllowMethods != "" {
+		fmt.Printf("  Allow-Methods:      %s\n", c.AllowMethods)
+	}
+	if c.Misconfigured {
+		fmt.Println("  ⚠️  Issues:")
+		for _, issue := range c.Issues {
+			fmt.Printf("    - %s\n", issue)
+		}
+	}
+}
+
+func printLatency(l types.LatencyInfo, verbose bool) {
+	if l.Average == "" {
+		return
+	}
+	fmt.Println("\nLatency Analysis:")
+	fmt.Printf("  Samples:       %d\n", l.Samples)
+	fmt.Printf("  Average:       %s\n", l.Average)
+	fmt.Printf("  Min:           %s\n", l.Min)
+	fmt.Printf("  Max:           %s\n", l.Max)
+	if l.StdDev != "" {
+		fmt.Printf("  Std Dev:       %s\n", l.StdDev)
+	}
+	if l.Jitter != "" {
+		fmt.Printf("  Jitter:        %s\n", l.Jitter)
+	}
+	if verbose && len(l.Measurements) > 0 {
+		fmt.Printf("  Measurements:  %v\n", l.Measurements)
+	}
+}
+
+func printSecurityTxt(s types.SecurityTxtInfo) {
+	if !s.Found {
+		return
+	}
+	fmt.Println("\nsecurity.txt:")
+	fmt.Printf("  Location:      %s\n", s.Location)
+	if len(s.Contact) > 0 {
+		fmt.Printf("  Contact:       %v\n", s.Contact)
+	}
+	if s.Expires != "" {
+		expiredMark := ""
+		if s.Expired {
+			expiredMark = " ⚠️ EXPIRED"
+		}
+		fmt.Printf("  Expires:       %s%s\n", s.Expires, expiredMark)
+	}
+	if s.Encryption != "" {
+		fmt.Printf("  Encryption:    %s\n", s.Encryption)
+	}
+	if s.Acknowledgments != "" {
+		fmt.Printf("  Acknowledgments: %s\n", s.Acknowledgments)
+	}
+	if s.Policy != "" {
+		fmt.Printf("  Policy:        %s\n", s.Policy)
+	}
+	if s.Hiring != "" {
+		fmt.Printf("  Hiring:        %s\n", s.Hiring)
+	}
+	if len(s.Issues) > 0 {
+		fmt.Println("  ⚠️  Issues:")
+		for _, issue := range s.Issues {
+			fmt.Printf("    - %s\n", issue)
+		}
+	}
+}
+
+func printIPv6(i types.IPv6Info) {
+	if i.Host == "" {
+		return
+	}
+	fmt.Println("\nIPv6 Support:")
+	if i.HasAAAA {
+		fmt.Printf("  AAAA Records:  ✓ %v\n", i.Addresses)
+		if i.Reachable {
+			fmt.Printf("  Reachable:     ✓ Yes\n")
+		} else {
+			fmt.Printf("  Reachable:     ✗ No (connection failed)\n")
+		}
+	} else {
+		fmt.Printf("  AAAA Records:  ✗ None\n")
+	}
+}
+
+func printRedirects(r types.RedirectInfo, verbose bool) {
+	if len(r.HTTPChain) == 0 && len(r.HTTPSChain) == 0 {
+		return
+	}
+	fmt.Println("\nRedirect Analysis:")
+	if r.HTTPSUpgrade {
+		fmt.Printf("  HTTPS Upgrade: ✓ HTTP redirects to HTTPS\n")
+	}
+	if verbose {
+		if len(r.HTTPChain) > 0 {
+			fmt.Println("  HTTP Chain:")
+			for i, hop := range r.HTTPChain {
+				fmt.Printf("    %d. [%d] %s\n", i+1, hop.StatusCode, hop.URL)
+			}
+		}
+		if len(r.HTTPSChain) > 0 {
+			fmt.Println("  HTTPS Chain:")
+			for i, hop := range r.HTTPSChain {
+				fmt.Printf("    %d. [%d] %s\n", i+1, hop.StatusCode, hop.URL)
+			}
+		}
+	}
+}
+
+func printBanners(b types.BannerInfo) {
+	if b.Server == "" && b.SSH == "" && b.FTP == "" && b.SMTP == "" {
+		return
+	}
+	fmt.Println("\nService Banners:")
+	if b.Server != "" {
+		fmt.Printf("  HTTP Server:   %s\n", b.Server)
+	}
+	if b.XPoweredBy != "" {
+		fmt.Printf("  X-Powered-By:  %s\n", b.XPoweredBy)
+	}
+	if b.SSH != "" {
+		fmt.Printf("  SSH:           %s\n", b.SSH)
+	}
+	if b.FTP != "" {
+		fmt.Printf("  FTP:           %s\n", b.FTP)
+	}
+	if b.SMTP != "" {
+		fmt.Printf("  SMTP:          %s\n", b.SMTP)
+	}
+	if b.VersionDisclosed {
+		fmt.Printf("  ⚠️  Version disclosure detected in %d service(s)\n", len(b.Versions))
+	}
 }

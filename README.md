@@ -103,6 +103,19 @@ This tool is intended for educational and authorized security testing purposes o
 - **Clean output mode** - Hides non-detected items by default
 - **Verbose mode** - Shows all details with `--verbose` flag
 
+### Advanced Analysis (NEW)
+- **WHOIS Lookup** - Domain registration information, registrar, creation/expiry dates, domain age
+- **Subdomain Enumeration** - Discover subdomains via Certificate Transparency logs (crt.sh)
+- **DNSSEC Validation** - Check if domain has DNSSEC enabled and properly configured
+- **WAF Detection** - Detect 15+ Web Application Firewalls (Cloudflare, AWS WAF, Akamai, Imperva, etc.)
+- **HTTP Methods Testing** - Check which HTTP methods are allowed/dangerous
+- **CORS Analysis** - Detect CORS misconfigurations and security issues
+- **Latency Measurement** - Multiple-sample latency analysis with statistics (min, max, avg, jitter)
+- **security.txt Parsing** - Parse and validate security.txt per RFC 9116
+- **IPv6 Support Check** - Verify IPv6 AAAA records and connectivity
+- **Redirect Chain Analysis** - Follow and analyze HTTP/HTTPS redirect chains
+- **Service Banner Grabbing** - Collect banners from SSH, FTP, SMTP services
+
 ## Installation
 
 ### Prerequisites
@@ -125,7 +138,12 @@ go build -o netanalyze ./cmd/netanalyze
 
 ### With all features enabled
 ```bash
-./netanalyze --geo --ports --perf --trace --verbose example.com
+./netanalyze --all example.com
+```
+
+### Specific advanced features
+```bash
+./netanalyze --whois --subdomains --dnssec example.com
 ```
 
 ### JSON output
@@ -134,6 +152,8 @@ go build -o netanalyze ./cmd/netanalyze
 ```
 
 ### Command-line options
+
+#### Basic Options
 - `--json` - Output results in JSON format
 - `--geo` - Include geolocation information
 - `--ports` - Scan common ports
@@ -141,6 +161,20 @@ go build -o netanalyze ./cmd/netanalyze
 - `--trace` - Show network hops (traceroute)
 - `--verbose` - Show all details including non-detected items
 - `--cve` - Attempt CVE lookups for detected components (optional `NVD_API_KEY`)
+
+#### Advanced Options
+- `--whois` - Show WHOIS domain registration information
+- `--subdomains` - Enumerate subdomains via certificate transparency
+- `--dnssec` - Check DNSSEC configuration
+- `--waf` - Detect Web Application Firewalls
+- `--methods` - Test allowed HTTP methods
+- `--cors` - Check CORS configuration
+- `--latency` - Measure response latency (10 samples)
+- `--sectxt` - Parse and analyze security.txt
+- `--ipv6` - Check IPv6 support and reachability
+- `--redirects` - Analyze redirect chains
+- `--banners` - Collect service banners (SSH, FTP, SMTP)
+- `--all` - Enable all analysis features
 
 ## Examples
 
@@ -151,7 +185,17 @@ go build -o netanalyze ./cmd/netanalyze
 
 ### Complete analysis with all features
 ```bash
-./netanalyze --geo --ports --perf --trace cloudflare.com
+./netanalyze --all cloudflare.com
+```
+
+### Security-focused analysis
+```bash
+./netanalyze --waf --cors --methods --sectxt example.com
+```
+
+### Reconnaissance mode
+```bash
+./netanalyze --whois --subdomains --banners example.com
 ```
 
 ### Quick security audit
@@ -166,7 +210,7 @@ NVD_API_KEY=<your-api-key> ./netanalyze --cve example.com
 
 ### Export to JSON file
 ```bash
-./netanalyze --json --geo --ports --perf example.com > analysis.json
+./netanalyze --json --all example.com > analysis.json
 ```
 
 ## Sample Output
@@ -274,8 +318,18 @@ netanalytics/
 │   │   └── detection.go      # Infrastructure detection (CDN, cloud, etc.)
 │   ├── analyzer/
 │   │   └── analyzer.go       # Intelligent findings analysis
-│   └── output/
-│       └── output.go         # Output formatting
+│   ├── output/
+│   │   └── output.go         # Output formatting
+│   ├── content/
+│   │   └── content.go        # Content discovery (robots.txt, security.txt, etc.)
+│   ├── vuln/
+│   │   └── vuln.go           # CVE vulnerability lookups
+│   ├── whois/
+│   │   └── whois.go          # WHOIS domain information lookup
+│   ├── subdomain/
+│   │   └── subdomain.go      # Subdomain enumeration via CT logs
+│   └── advanced/
+│       └── advanced.go       # Advanced security checks (WAF, CORS, DNSSEC, etc.)
 ├── go.mod                    # Go module definition
 ├── go.sum                    # Go dependencies
 └── README.md                 # This file
@@ -322,6 +376,18 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## Changelog
 
 ### Recent Updates
+- ✅ **NEW: WHOIS Lookup** - Domain registration information with registrar, dates, and domain age calculation
+- ✅ **NEW: Subdomain Enumeration** - Discover subdomains via Certificate Transparency logs (crt.sh)
+- ✅ **NEW: DNSSEC Validation** - Check DNSSEC configuration and chain validity
+- ✅ **NEW: WAF Detection** - Detect 15+ Web Application Firewalls
+- ✅ **NEW: HTTP Methods Testing** - Check which HTTP methods are allowed
+- ✅ **NEW: CORS Analysis** - Detect CORS misconfigurations
+- ✅ **NEW: Latency Measurement** - Statistical latency analysis with jitter
+- ✅ **NEW: security.txt Parsing** - Parse and validate per RFC 9116
+- ✅ **NEW: IPv6 Support Check** - Verify IPv6 connectivity
+- ✅ **NEW: Redirect Chain Analysis** - Follow and analyze redirect chains
+- ✅ **NEW: Service Banner Grabbing** - Collect SSH, FTP, SMTP banners
+- ✅ **NEW: --all flag** - Enable all analysis features at once
 - ✅ Added intelligent findings analysis with severity-based reporting
 - ✅ Enhanced version detection for servers, frameworks, and libraries
 - ✅ Added detailed encryption information (cipher strength, key exchange, PFS)

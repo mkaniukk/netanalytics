@@ -50,6 +50,212 @@ func AnalyzeFindings(result *types.AnalysisResult) []types.Finding {
 	// CVE Findings
 	findings = append(findings, analyzeCVEs(result.Vulnerabilities)...)
 
+	// Advanced analysis findings
+	findings = append(findings, analyzeAdvancedFeatures(result)...)
+
+	return findings
+}
+
+// analyzeAdvancedFeatures examines the new advanced analysis features
+func analyzeAdvancedFeatures(result *types.AnalysisResult) []types.Finding {
+	var findings []types.Finding
+
+	// WHOIS Analysis
+	if result.WHOIS.Registrar != "" {
+		findings = append(findings, analyzeWHOIS(result.WHOIS)...)
+	}
+
+	// Subdomain Analysis
+	if result.Subdomains.Count > 0 {
+		findings = append(findings, analyzeSubdomains(result.Subdomains)...)
+	}
+
+	// DNSSEC Analysis
+	if result.DNSSEC.Domain != "" {
+		findings = append(findings, analyzeDNSSEC(result.DNSSEC)...)
+	}
+
+	// WAF Detection
+	if result.WAF.Detected {
+		findings = append(findings, types.Finding{
+			Severity: "positive",
+			Category: "Security",
+			Message:  fmt.Sprintf("WAF detected: %s", result.WAF.Name),
+			Detail:   "Web Application Firewall provides additional security layer",
+		})
+	}
+
+	// HTTP Methods Analysis
+	if len(result.HTTPMethods.DangerousMethods) > 0 {
+		findings = append(findings, types.Finding{
+			Severity: "warning",
+			Category: "Security",
+			Message:  fmt.Sprintf("Dangerous HTTP methods enabled: %s", strings.Join(result.HTTPMethods.DangerousMethods, ", ")),
+			Detail:   "Consider disabling PUT, DELETE, TRACE, CONNECT methods if not required",
+		})
+	}
+
+	// CORS Analysis
+	if result.CORS.Misconfigured {
+		for _, issue := range result.CORS.Issues {
+			severity := "warning"
+			if strings.Contains(issue, "CRITICAL") {
+				severity = "critical"
+			}
+			findings = append(findings, types.Finding{
+				Severity: severity,
+				Category: "Security",
+				Message:  "CORS misconfiguration detected",
+				Detail:   issue,
+			})
+		}
+	}
+
+	// Security.txt Analysis
+	if result.SecurityTxt.Found {
+		if len(result.SecurityTxt.Issues) > 0 {
+			for _, issue := range result.SecurityTxt.Issues {
+				findings = append(findings, types.Finding{
+					Severity: "warning",
+					Category: "Security",
+					Message:  "security.txt issue",
+					Detail:   issue,
+				})
+			}
+		} else {
+			findings = append(findings, types.Finding{
+				Severity: "positive",
+				Category: "Security",
+				Message:  "Valid security.txt found",
+				Detail:   fmt.Sprintf("Contact: %s", strings.Join(result.SecurityTxt.Contact, ", ")),
+			})
+		}
+	}
+
+	// IPv6 Analysis
+	if result.IPv6.Host != "" {
+		if result.IPv6.HasAAAA && result.IPv6.Reachable {
+			findings = append(findings, types.Finding{
+				Severity: "positive",
+				Category: "Network",
+				Message:  "IPv6 support enabled and reachable",
+				Detail:   fmt.Sprintf("IPv6 addresses: %s", strings.Join(result.IPv6.Addresses, ", ")),
+			})
+		} else if result.IPv6.HasAAAA && !result.IPv6.Reachable {
+			findings = append(findings, types.Finding{
+				Severity: "warning",
+				Category: "Network",
+				Message:  "IPv6 configured but not reachable",
+				Detail:   "AAAA records exist but IPv6 connection failed",
+			})
+		}
+	}
+
+	// Redirect Analysis
+	if result.Redirects.HTTPSUpgrade {
+		findings = append(findings, types.Finding{
+			Severity: "positive",
+			Category: "Security",
+			Message:  "HTTP to HTTPS redirect enabled",
+			Detail:   "HTTP traffic is automatically upgraded to HTTPS",
+		})
+	}
+
+	// Banner Analysis
+	if result.Banners.VersionDisclosed {
+		findings = append(findings, types.Finding{
+			Severity: "warning",
+			Category: "Security",
+			Message:  "Server version information disclosed",
+			Detail:   fmt.Sprintf("Versions exposed: %s", strings.Join(result.Banners.Versions, ", ")),
+		})
+	}
+
+	return findings
+}
+
+func analyzeWHOIS(whois types.WHOISInfo) []types.Finding {
+	var findings []types.Finding
+
+	// Check domain age
+	if whois.DomainAge != "" {
+		findings = append(findings, types.Finding{
+			Severity: "info",
+			Category: "Domain",
+			Message:  fmt.Sprintf("Domain age: %s", whois.DomainAge),
+			Detail:   fmt.Sprintf("Created: %s, Registrar: %s", whois.CreationDate, whois.Registrar),
+		})
+	}
+
+	// Check expiry
+	if whois.ExpiryDate != "" {
+		findings = append(findings, types.Finding{
+			Severity: "info",
+			Category: "Domain",
+			Message:  fmt.Sprintf("Domain expires: %s", whois.ExpiryDate),
+			Detail:   "Monitor domain expiration to prevent hijacking",
+		})
+	}
+
+	return findings
+}
+
+func analyzeSubdomains(subs types.SubdomainInfo) []types.Finding {
+	var findings []types.Finding
+
+	findings = append(findings, types.Finding{
+		Severity: "info",
+		Category: "Reconnaissance",
+		Message:  fmt.Sprintf("Found %d subdomains", subs.Count),
+		Detail:   fmt.Sprintf("Sources: %s", strings.Join(subs.Sources, ", ")),
+	})
+
+	// Check for potentially sensitive subdomains
+	sensitiveKeywords := []string{"admin", "staging", "test", "dev", "internal", "api", "backup", "db", "database", "jenkins", "git"}
+	for _, sub := range subs.Found {
+		subLower := strings.ToLower(sub)
+		for _, keyword := range sensitiveKeywords {
+			if strings.Contains(subLower, keyword) {
+				findings = append(findings, types.Finding{
+					Severity: "info",
+					Category: "Reconnaissance",
+					Message:  fmt.Sprintf("Potentially sensitive subdomain: %s", sub),
+					Detail:   "Verify this subdomain is properly secured",
+				})
+				break
+			}
+		}
+	}
+
+	return findings
+}
+
+func analyzeDNSSEC(dnssec types.DNSSECInfo) []types.Finding {
+	var findings []types.Finding
+
+	if dnssec.Enabled && dnssec.Valid {
+		findings = append(findings, types.Finding{
+			Severity: "positive",
+			Category: "Security",
+			Message:  "DNSSEC enabled and valid",
+			Detail:   fmt.Sprintf("Algorithm: %s", dnssec.Algorithm),
+		})
+	} else if dnssec.Enabled && !dnssec.Valid {
+		findings = append(findings, types.Finding{
+			Severity: "warning",
+			Category: "Security",
+			Message:  "DNSSEC configured but may be invalid",
+			Detail:   "DS records not found or chain incomplete",
+		})
+	} else {
+		findings = append(findings, types.Finding{
+			Severity: "info",
+			Category: "Security",
+			Message:  "DNSSEC not enabled",
+			Detail:   "Consider enabling DNSSEC to prevent DNS spoofing attacks",
+		})
+	}
+
 	return findings
 }
 

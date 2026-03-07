@@ -134,10 +134,15 @@ type CloudProviderInfo struct {
 }
 
 type WHOISInfo struct {
-	Registrar    string
-	CreationDate string
-	ExpiryDate   string
-	NameServers  []string
+	Registrar    string   `json:"registrar"`
+	Registrant   string   `json:"registrant"`
+	CreationDate string   `json:"creation_date"`
+	UpdatedDate  string   `json:"updated_date"`
+	ExpiryDate   string   `json:"expiry_date"`
+	DomainAge    string   `json:"domain_age"`
+	NameServers  []string `json:"name_servers"`
+	DomainStatus []string `json:"domain_status"`
+	RawData      string   `json:"raw_data,omitempty"`
 }
 
 type HopInfo struct {
@@ -201,6 +206,123 @@ type CVEResult struct {
 	Matches   []CVEEntry        `json:"matches"`
 }
 
+// SubdomainInfo contains subdomain enumeration results
+type SubdomainInfo struct {
+	Domain   string                `json:"domain"`
+	Count    int                   `json:"count"`
+	Found    []string              `json:"found"`
+	Resolved []SubdomainResolution `json:"resolved"`
+	Sources  []string              `json:"sources"`
+}
+
+type SubdomainResolution struct {
+	Subdomain string   `json:"subdomain"`
+	IPs       []string `json:"ips"`
+	CNAME     string   `json:"cname,omitempty"`
+	Active    bool     `json:"active"`
+}
+
+// DNSSECInfo contains DNSSEC validation results
+type DNSSECInfo struct {
+	Domain    string   `json:"domain"`
+	Enabled   bool     `json:"enabled"`
+	Valid     bool     `json:"valid"`
+	Algorithm string   `json:"algorithm,omitempty"`
+	KeyType   string   `json:"key_type,omitempty"`
+	Keys      []string `json:"keys,omitempty"`
+	DSRecords []string `json:"ds_records,omitempty"`
+}
+
+// WAFInfo contains WAF detection results
+type WAFInfo struct {
+	Detected bool     `json:"detected"`
+	Name     string   `json:"name,omitempty"`
+	Evidence []string `json:"evidence,omitempty"`
+}
+
+// HTTPMethodsInfo contains HTTP methods testing results
+type HTTPMethodsInfo struct {
+	Methods          []HTTPMethodResult `json:"methods"`
+	Allowed          []string           `json:"allowed"`
+	DangerousMethods []string           `json:"dangerous_methods,omitempty"`
+}
+
+type HTTPMethodResult struct {
+	Method     string `json:"method"`
+	StatusCode int    `json:"status_code"`
+	Allowed    bool   `json:"allowed"`
+}
+
+// CORSInfo contains CORS configuration analysis
+type CORSInfo struct {
+	Enabled          bool     `json:"enabled"`
+	AllowOrigin      string   `json:"allow_origin,omitempty"`
+	AllowCredentials bool     `json:"allow_credentials"`
+	AllowMethods     string   `json:"allow_methods,omitempty"`
+	AllowHeaders     string   `json:"allow_headers,omitempty"`
+	Misconfigured    bool     `json:"misconfigured"`
+	Issues           []string `json:"issues,omitempty"`
+}
+
+// LatencyInfo contains latency measurement results
+type LatencyInfo struct {
+	Host         string   `json:"host"`
+	Samples      int      `json:"samples"`
+	Min          string   `json:"min"`
+	Max          string   `json:"max"`
+	Average      string   `json:"average"`
+	StdDev       string   `json:"std_dev"`
+	Jitter       string   `json:"jitter"`
+	Measurements []string `json:"measurements,omitempty"`
+}
+
+// SecurityTxtInfo contains parsed security.txt data
+type SecurityTxtInfo struct {
+	Found              bool     `json:"found"`
+	Location           string   `json:"location,omitempty"`
+	Contact            []string `json:"contact,omitempty"`
+	Expires            string   `json:"expires,omitempty"`
+	Expired            bool     `json:"expired"`
+	Encryption         string   `json:"encryption,omitempty"`
+	Acknowledgments    string   `json:"acknowledgments,omitempty"`
+	PreferredLanguages string   `json:"preferred_languages,omitempty"`
+	Canonical          string   `json:"canonical,omitempty"`
+	Policy             string   `json:"policy,omitempty"`
+	Hiring             string   `json:"hiring,omitempty"`
+	Issues             []string `json:"issues,omitempty"`
+}
+
+// IPv6Info contains IPv6 support information
+type IPv6Info struct {
+	Host      string   `json:"host"`
+	HasAAAA   bool     `json:"has_aaaa"`
+	Addresses []string `json:"addresses,omitempty"`
+	Reachable bool     `json:"reachable"`
+}
+
+// RedirectInfo contains redirect chain analysis
+type RedirectInfo struct {
+	HTTPChain    []RedirectHop `json:"http_chain,omitempty"`
+	HTTPSChain   []RedirectHop `json:"https_chain,omitempty"`
+	HTTPSUpgrade bool          `json:"https_upgrade"`
+}
+
+type RedirectHop struct {
+	URL        string `json:"url"`
+	StatusCode int    `json:"status_code"`
+}
+
+// BannerInfo contains server banner analysis
+type BannerInfo struct {
+	Server           string   `json:"server,omitempty"`
+	XPoweredBy       string   `json:"x_powered_by,omitempty"`
+	SSH              string   `json:"ssh,omitempty"`
+	FTP              string   `json:"ftp,omitempty"`
+	SMTP             string   `json:"smtp,omitempty"`
+	VersionDisclosed bool     `json:"version_disclosed"`
+	Versions         []string `json:"versions,omitempty"`
+}
+
 type AnalysisResult struct {
 	Host            string
 	Timestamp       string
@@ -223,4 +345,16 @@ type AnalysisResult struct {
 	Container       ContainerInfo
 	Network         NetworkInfo
 	Findings        []Finding
+	// New advanced analysis fields
+	WHOIS       WHOISInfo       `json:"whois,omitempty"`
+	Subdomains  SubdomainInfo   `json:"subdomains,omitempty"`
+	DNSSEC      DNSSECInfo      `json:"dnssec,omitempty"`
+	WAF         WAFInfo         `json:"waf,omitempty"`
+	HTTPMethods HTTPMethodsInfo `json:"http_methods,omitempty"`
+	CORS        CORSInfo        `json:"cors,omitempty"`
+	Latency     LatencyInfo     `json:"latency,omitempty"`
+	SecurityTxt SecurityTxtInfo `json:"security_txt,omitempty"`
+	IPv6        IPv6Info        `json:"ipv6,omitempty"`
+	Redirects   RedirectInfo    `json:"redirects,omitempty"`
+	Banners     BannerInfo      `json:"banners,omitempty"`
 }
